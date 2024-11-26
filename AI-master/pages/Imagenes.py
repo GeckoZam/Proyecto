@@ -2,6 +2,8 @@ import streamlit as st
 from PIL import Image
 import plotly.express as px
 import pandas as pd
+import keras
+from keras.preprocessing.image import img_to_array
 import tensorflow as tf
 import numpy as np
 import cv2
@@ -11,8 +13,10 @@ st.set_page_config(layout="wide")
 st.title("Detección de Emociones en Imágenes")
 
 # Cargar el modelo preentrenado
-model = tf.keras.models.load_model("modelEmocion.h5")
-emotion_labels = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
+model = tf.keras.models.load_model("modelEmocion2.keras")
+emotion_labels = ['disgust', 'sad', 'fear', 'angry', 'neutral', 'happy', 'surprise']
+faces = []
+
 
 @st.cache_data
 def cargar_imagen(image_file):
@@ -21,12 +25,14 @@ def cargar_imagen(image_file):
 
 # Función para preprocesar la imagen antes de pasársela al modelo
 def preprocess_image(image):
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)  # Convertir a escala de grises
-    image = cv2.resize(image, (48, 48))  # Redimensionar a 48x48 (tamaño común para modelos de emociones)
-    image = image / 255.0  # Normalizar la imagen
-    image = np.expand_dims(image, axis=-1)  # Añadir la dimensión de canal de color
-    image = np.expand_dims(image, axis=0)  # Añadir la dimensión de batch
-    return image
+    face = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    face = cv2.resize(face, (48, 48))
+    face2 = img_to_array(face)
+    face2 = np.expand_dims(face2,axis=0)  # Añadir una dimensión extra para el batch size  
+    face2 = np.expand_dims(face2, axis=-1)  # Añadir una dimensión extra para la profundidad de color
+    faces.append(face2)
+    return faces
+
 
 # Subir la imagen
 archivo_imagen = st.file_uploader("Sube una imagen para detectar emociones", type=["png", "jpg", "jpeg"])

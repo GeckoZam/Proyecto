@@ -3,6 +3,8 @@ from PIL import Image
 import plotly.express as px
 import pandas as pd
 import cv2
+import keras
+from keras.preprocessing.image import img_to_array
 import time
 import tensorflow as tf
 import numpy as np
@@ -12,10 +14,11 @@ from collections import Counter
 st.title("Página de la Webcam con Detección de Emociones")
 
 # Cargar tu modelo preentrenado
-model = tf.keras.models.load_model("modelEmocion.h5")
+model = tf.keras.models.load_model("modelEmocion2.keras")
+faces = []
 
 # Lista de clases de emociones (con las clases que mencionaste)
-emotion_labels = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
+emotion_labels = ['angry', 'disgust', 'fear', 'happy', 'sad', 'neutral', 'surprise']
 
 # Placeholder para reproducir la cámara
 frame_placeholder = st.empty()
@@ -26,15 +29,6 @@ cap = cv2.VideoCapture(0)
 # Lista para almacenar las emociones detectadas
 emotion_counts = {emotion: 0 for emotion in emotion_labels}
 
-# Preprocesamiento de la imagen (según cómo tu modelo haya sido entrenado)
-def preprocess_image(image):
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)  # Si tu modelo fue entrenado con imágenes en escala de grises
-    image = cv2.resize(image, (48, 48))  # Ajusta el tamaño si es necesario (48x48 es común en muchos modelos)
-    image = image / 255.0  # Normalizar la imagen
-    image = np.expand_dims(image, axis=-1)  # Añadir una dimensión extra para la profundidad de color
-    image = np.expand_dims(image, axis=0)  # Añadir una dimensión extra para el batch size
-    return image
-
 # Loop para tomar frames de la cámara y analizarlos
 if cap.isOpened():
     for _ in range(100):  # Limite de 100 frames para terminar el loop
@@ -44,10 +38,15 @@ if cap.isOpened():
             break
         
         # Preprocesamiento de la imagen
-        processed_image = preprocess_image(frame)
+        face = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        face = cv2.resize(face, (48, 48))
+        face2 = img_to_array(face)
+        face2 = np.expand_dims(face, axis=-1)  # Añadir una dimensión extra para la profundidad de color
+        face2 = np.expand_dims(face2,axis=0)  # Añadir una dimensión extra para el batch size
+        faces.append(face2)
 
         # Realizar la predicción de todas las emociones
-        emotion_probs = model.predict(processed_image)
+        emotion_probs = model.predict(face2)
         
         # Contar las ocurrencias de todas las emociones detectadas
         for i, emotion in enumerate(emotion_labels):
